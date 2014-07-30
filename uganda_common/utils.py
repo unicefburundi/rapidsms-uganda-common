@@ -26,6 +26,7 @@ import openpyxl
 import types
 from django.core.servers.basehttp import FileWrapper
 from django.db import connection
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +182,47 @@ class ExcelResponse(HttpResponse):
 
         book_created = create_workbook(data, output_name, headers,)
 
+
+        # book.save(output_name)
+        # output.seek(0)
+        if not write_to_file:
+            super(ExcelResponse, self).__init__(FileWrapper(open(output_name)),
+                                                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            self['Content-Disposition'] = 'attachment;filename="%s.%s"' % \
+                                          (output_name.replace('"', '\"'), "xlsx")
+
+
+
+class ExcelResults(HttpResponse):
+    """
+    This class contains utilities that are used to produce Excel reports from datasets stored in a database or scraped
+    from a form.
+    """
+
+    def __init__(self, data, output_name='excel_report.xlsx', headers=None, header=None, write_to_file=False,
+                 force_csv=False):
+        # Make sure we've got the right type of data to work with
+        valid_data = False
+        if hasattr(data, '__getitem__'):
+            if isinstance(data[0], dict):
+                if headers is None:
+                    headers = data[0].keys()
+                data = [[row[col] for col in headers] for row in data]
+                # data.insert(0, headers)
+            if hasattr(data[0], '__getitem__'):
+                valid_data = True
+        import StringIO
+
+        output = StringIO.StringIO()
+        mimetype = 'application/vnd.ms-excel'
+        output_name = \
+os.path.join(os.path.join(os.path.join(settings.MEDIA_ROOT,'ureport'), 'spreadsheets'), output_name)
+
+        book_created = create_workbook(data, output_name, headers,)
+        if book_created:
+            response = HttpResponse(data,content_type="application/vnd.ms-excel")
+            response["Content-Disposition"] = "attachment; filename=output_name"
+        #import ipdb; ipdb.set_trace();
 
         # book.save(output_name)
         # output.seek(0)
