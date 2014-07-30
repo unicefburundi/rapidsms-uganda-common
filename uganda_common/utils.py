@@ -155,6 +155,17 @@ def create_workbook(data, filename, headers):
     wb.save(filename)
     return True
 
+def create_workbook2(data, filename, headers):
+    wb = Workbook(optimized_write=True)
+    ws = wb.create_sheet()
+    if headers:
+        ws.append(headers)
+
+    for rowx, row in enumerate(data):
+        ws.append(map(normalize_value, list(row)))
+    wb.save(filename)
+    return True
+
 
 class ExcelResponse(HttpResponse):
     """
@@ -184,11 +195,43 @@ class ExcelResponse(HttpResponse):
 
         # book.save(output_name)
         # output.seek(0)
+
         if not write_to_file:
             super(ExcelResponse, self).__init__(FileWrapper(open(output_name)),
                                                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             self['Content-Disposition'] = 'attachment;filename="%s.%s"' % \
                                           (output_name.replace('"', '\"'), "xlsx")
+
+
+class ExcelResults(HttpResponse):
+    """
+    This class contains utilities that are used to produce Excel reports from datasets stored in a database or scraped
+    from a form.
+    """
+
+    def __init__(self, data, output_name='excel_report.xlsx', headers=None, header=None, write_to_file=False,
+                 force_csv=False):
+        # Make sure we've got the right type of data to work with
+        # import ipdb; ipdb.set_trace()
+        valid_data = False
+        if hasattr(data, '__getitem__'):
+            if isinstance(data[0], dict):
+                if headers is None:
+                    headers = data[0].keys()
+                data = [[row[col] for col in headers] for row in data]
+                # data.insert(0, headers)
+            if hasattr(data[0], '__getitem__'):
+                valid_data = True
+        import os
+        filename = \
+                        os.path.join(os.path.join(os.path.join(settings.STATIC_ROOT,'ureport'), 'spreadsheets'),
+                                    output_name)
+        book_created = create_workbook2(data, filename, headers,)
+
+        if not write_to_file:
+            super(ExcelResults, self).__init__(FileWrapper(open(filename)),
+                                                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            self['Content-Disposition'] = 'attachment;filename="%s"' % filename
 
 
 def parse_district_value(value):
