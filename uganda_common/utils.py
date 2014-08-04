@@ -26,6 +26,7 @@ import openpyxl
 import types
 from django.core.servers.basehttp import FileWrapper
 from django.db import connection
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +203,6 @@ class ExcelResponse(HttpResponse):
             self['Content-Disposition'] = 'attachment;filename="%s.%s"' % \
                                           (output_name.replace('"', '\"'), "xlsx")
 
-
 class ExcelResults(HttpResponse):
     """
     This class contains utilities that are used to produce Excel reports from datasets stored in a database or scraped
@@ -212,7 +212,6 @@ class ExcelResults(HttpResponse):
     def __init__(self, data, output_name='excel_report.xlsx', headers=None, header=None, write_to_file=False,
                  force_csv=False):
         # Make sure we've got the right type of data to work with
-        # import ipdb; ipdb.set_trace()
         valid_data = False
         if hasattr(data, '__getitem__'):
             if isinstance(data[0], dict):
@@ -222,6 +221,7 @@ class ExcelResults(HttpResponse):
                 # data.insert(0, headers)
             if hasattr(data[0], '__getitem__'):
                 valid_data = True
+
         import os
         filename = \
                         os.path.join(os.path.join(os.path.join(settings.STATIC_ROOT,'ureport'), 'spreadsheets'),
@@ -232,6 +232,7 @@ class ExcelResults(HttpResponse):
             super(ExcelResults, self).__init__(FileWrapper(open(filename)),
                                                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             self['Content-Disposition'] = 'attachment;filename="%s"' % filename
+
 
 
 def parse_district_value(value):
