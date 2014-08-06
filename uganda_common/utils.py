@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from eav.models import Attribute
 from generic.utils import get_dates as get_dates_from_post
 from poll.models import Poll, LocationResponseForm, STARTSWITH_PATTERN_TEMPLATE
@@ -113,10 +113,13 @@ def assign_backend(number):
 
 
 def normalize_value(value):
+    # import ipdb; ipdb.set_trace()
     if isinstance(value, tuple(openpyxl.shared.NUMERIC_TYPES)):
         return value
     elif isinstance(value, (bool, datetime.date)):
         return value
+    elif (value is None) or isinstance(value, datetime.timedelta):
+            return value
     elif isinstance(value, types.NoneType):
         return ""
     elif isinstance(value, types.StringType):
@@ -203,14 +206,21 @@ class ExcelResponse(HttpResponse):
             self['Content-Disposition'] = 'attachment;filename="%s.%s"' % \
                                           (output_name.replace('"', '\"'), "xlsx")
 
-class ExcelResults(HttpResponse):
+
+class ExcelResults(StreamingHttpResponse):
     """
     This class contains utilities that are used to produce Excel reports from datasets stored in a database or scraped
     from a form.
     """
 
-    def __init__(self, data, output_name='excel_report.xlsx', headers=None, header=None, write_to_file=False,
-                 force_csv=False):
+    def __init__(self,
+                data,
+                output_name='excel_report.xlsx',
+                headers=None,
+                header=None,
+                write_to_file=False,
+                force_csv=False):
+        # import ipdb; ipdb.set_trace()
         # Make sure we've got the right type of data to work with
         valid_data = False
         if hasattr(data, '__getitem__'):
@@ -226,12 +236,14 @@ class ExcelResults(HttpResponse):
         filename = \
                         os.path.join(os.path.join(os.path.join(settings.STATIC_ROOT,'ureport'), 'spreadsheets'),
                                     output_name)
-        book_created = create_workbook2(data, filename, headers,)
+        book_created = create_workbook2(data, filename, headers)
 
         if not write_to_file:
             super(ExcelResults, self).__init__(FileWrapper(open(filename)),
                                                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            self['Content-Disposition'] = 'attachment;filename="%s"' % filename
+            self['Content-Disposition'] = 'attachment;filename="%s.%s"' % \
+                                          (output_name.replace('"', '\"'), "xlsx")
+
 
 
 
