@@ -135,7 +135,6 @@ def normalize_value(value):
         return repr(value)[2:-1]
 
     else:
-        print value
         return repr(value)
 
 
