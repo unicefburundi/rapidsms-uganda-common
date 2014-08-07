@@ -219,7 +219,7 @@ class ExcelResults(StreamingHttpResponse):
 
         import os
         filename = \
-                        os.path.join(os.path.join(os.path.join(settings.STATIC_ROOT,'ureport'), 'spreadsheets'),
+                        os.path.join(os.path.join(os.path.join(settings.MEDIA_ROOT,'ureport'), 'spreadsheets'),
                                     output_name)
         book_created = create_workbook(data, filename, headers)
 
