@@ -113,13 +113,10 @@ def assign_backend(number):
 
 
 def normalize_value(value):
-    # import ipdb; ipdb.set_trace()
     if isinstance(value, tuple(openpyxl.shared.NUMERIC_TYPES)):
         return value
     elif isinstance(value, (bool, datetime.date)):
         return value
-    elif (value is None) or isinstance(value, datetime.timedelta):
-            return value
     elif isinstance(value, types.NoneType):
         return ""
     elif isinstance(value, types.StringType):
@@ -155,17 +152,6 @@ def create_workbook(data, filename, headers):
         #   column_letter = get_column_letter((colx + 1))
         #  ws.cell('%s%s'%(column_letter, (rowx+ 1))).value = value
     # ws.auto_filter = ws.calculate_dimension()
-    wb.save(filename)
-    return True
-
-def create_workbook2(data, filename, headers):
-    wb = Workbook(optimized_write=True)
-    ws = wb.create_sheet()
-    if headers:
-        ws.append(headers)
-
-    for rowx, row in enumerate(data):
-        ws.append(map(normalize_value, list(row)))
     wb.save(filename)
     return True
 
@@ -235,7 +221,7 @@ class ExcelResults(StreamingHttpResponse):
         filename = \
                         os.path.join(os.path.join(os.path.join(settings.STATIC_ROOT,'ureport'), 'spreadsheets'),
                                     output_name)
-        book_created = create_workbook2(data, filename, headers)
+        book_created = create_workbook(data, filename, headers)
 
         if not write_to_file:
             super(ExcelResults, self).__init__(FileWrapper(open(filename)),
